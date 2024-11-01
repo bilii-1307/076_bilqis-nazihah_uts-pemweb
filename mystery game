@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
+    <title>GameBilqis - Have a Good Day</title>
+    <style>
+        /* Variabel CSS */
+        :root {
+            --scrub: #C0B3A0;
+            --day-duration: 120s;
+            --foreground-duration: 30s;
+            --hills-duration: 60s;
+            --rocks1-duration: 120s;
+            --rocks2-duration: 240s;
+            --button-bg-color: #6a1b9a;
+            --button-hover-color: #4a148c;
+        }
+
+        body {
+            font-family: 'Tiny5', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-size: cover;
+            background-repeat: no-repeat;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .font {
+            font-family: 'Tiny5', sans-serif;
+            width: auto;
+            height: auto;
+            text-align: center;
+            letter-spacing: 0px;
+            margin: 10px;
+            color: black;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        section {
+            margin: 0;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: var(--scrub);
+        }
+
+        .content {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .paralax {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: url("http://www.testomic.com/public/codepen-assets/img/paralax/background.jpg");
+            background-size: cover;
+            background-position: center;
+        }
+
+        .paralax .layer {
+            position: absolute;
+            width: 400%;
+        }
+
+        .paralax .foreground {
+            height: 50%;
+            bottom: 0;
+            background: url("http://www.testomic.com/public/codepen-assets/img/paralax/foreground.png") repeat-x;
+            background-size: 25% 100%;
+            animation: slideshow var(--foreground-duration) linear infinite;
+        }
+
+        .paralax .hills {
+            height: 40%;
+            bottom: 15%;
+            background: url("http://www.testomic.com/public/codepen-assets/img/paralax/hills.png") repeat-x;
+            background-size: 25% 100%;
+            animation: slideshow var(--hills-duration) linear infinite;
+        }
+
+        .paralax .rocks1 {
+            height: 35%;
+            bottom: 25%;
+            background: url("http://www.testomic.com/public/codepen-assets/img/paralax/rocks1.png") repeat-x;
+            background-size: 25% 100%;
+            animation: slideshow var(--rocks1-duration) linear infinite;
+        }
+
+        .paralax .rocks2 {
+            height: 40%;
+            bottom: 15%;
+            background: url("http://www.testomic.com/public/codepen-assets/img/paralax/rocks2.png") repeat-x;
+            background-size: 25% 100%;
+            animation: slideshow var(--rocks2-duration) linear infinite;
+        }
+
+        @keyframes slideshow {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .start-button {
+            background-color: var(--button-bg-color);
+            color: #fff;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            position: absolute;
+            bottom: 40%; /* Diubah dari 50% menjadi 40% */
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Tiny5', sans-serif;
+        }
+
+        .start-button:hover {
+            background-color: var(--button-hover-color);
+        }
+
+        #link {
+            font-family: 'Roboto', sans-serif;
+            position: fixed;
+            bottom: 5%;
+            width: 100%;
+            text-align: center;
+        }
+
+        a:link, a:visited, a:active {
+            color: white;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: rgb(250, 137, 0);
+        }
+
+        canvas {
+            border: 1px solid #d3d3d3;
+            background-color: #f1f1f1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw; /* Ubah menjadi 100vw */
+            height: 100vh; /* Ubah menjadi 100vh */
+            display: none; /* Sembunyikan canvas permainan */
+        }
+    </style>
+</head>
+<body>
+    <div class="content" id="start-screen">
+        <div class="paralax">
+            <div class="font" style="font-size: 70px; margin-top: 150px;">
+                <h1>Mystery Grid Game</h1>
+                <p></p>
+            </div>  
+            <div class="layer rocks2"></div>
+            <div class="layer rocks1"></div>
+            <div class="layer hills"></div>
+            <div class="layer foreground"></div>
+        </div>
+        <button class="start-button" id="start-button">MULAI</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas> <!-- Tambahkan canvas untuk permainan -->
+
+    <script>
+        var myGamePiece;
+        var myObstacles = [];
+        var myScore;
+
+        // Fungsi untuk mengubah tampilan ke permainan
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none'; // Sembunyikan layar awal
+            var gameCanvas = document.getElementById('gameCanvas');
+            gameCanvas.style.display = 'block'; // Tampilkan canvas permainan
+            myGamePiece = new component(30, 30, "red", 10, 120);
+            myGamePiece.gravity = 0.05;
+            myScore = new component("30px", "Consolas", "black", 280, 40, "text");
+            myGameArea.start();
+        }
+
+        var myGameArea = {
+            canvas: document.getElementById("gameCanvas"),
+            start: function() {
+                this.canvas.width = window.innerWidth; // Ubah ukuran canvas mengikuti lebar jendela
+                this.canvas.height = window.innerHeight; // Ubah ukuran canvas mengikuti tinggi jendela
+                this.context = this.canvas.getContext("2d");
+                this.frameNo = 0;
+                this.interval = setInterval(updateGameArea, 20);
+                window.addEventListener('keydown', keyDown);
+                window.addEventListener('keyup', keyUp);
+            },
+            clear: function() {
+                this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            },
+            stop: function() {
+                clearInterval(this.interval); // Hentikan interval saat pemain kalah
+            }
+        }
+
+        function component(width, height, color, x, y, type) {
+            this.type = type;
+            this.score = 0;
+            this.width = width;
+            this.height = height;
+            this.speedX = 0;
+            this.speedY = 0;  // Kecepatan vertikal
+            this.gravity = 0;
+            this.gravitySpeed = 0;
+            this.x = x;
+            this.y = y;
+            this.update = function() {
+                ctx = myGameArea.context;
+                if (this.type == "text") {
+                    ctx.font = this.width + " " + this.height;
+                    ctx.fillStyle = color;
+                    ctx.fillText(this.text, this.x, this.y);
+                } else {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+            }
+            this.newPos = function() {
+                this.x += this.speedX;
+                this.y += this.speedY;  // Update posisi vertikal
+                this.hitBounds();
+            }
+            this.hitBounds = function() {
+                if (this.y < 0) {
+                    this.y = 0;
+                }
+                if (this.y + this.height > myGameArea.canvas.height) {
+                    this.y = myGameArea.canvas.height - this.height;
+                }
+                if (this.x < 0) {
+                    this.x = 0;
+                }
+                if (this.x + this.width > myGameArea.canvas.width) {
+                    this.x = myGameArea.canvas.width - this.width;
+                }
+            }
+            this.crashWith = function(obstacle) {
+                var myleft = this.x;
+                var myright = this.x + (this.width);
+                var mytop = this.y;
+                var mybottom = this.y + (this.height);
+                var otherleft = obstacle.x;
+                var otherright = obstacle.x + (obstacle.width);
+                var othertop = obstacle.y;
+                var otherbottom = obstacle.y + (obstacle.height);
+                return !(mybottom < othertop || mytop > otherbottom || myright < otherleft || myleft > otherright);
+            }
+        }
+
+        function updateGameArea() {
+    	var x, height, gap, minHeight, maxHeight, minGap, maxGap;
+    	for (var i = 0; i < myObstacles.length; i++) {
+        	if (myGamePiece.crashWith(myObstacles[i])) {
+            myGameArea.stop();
+            return;
+        }
+    }
+    	myGameArea.clear();
+    myScore.text = "SCORE: " + myGameArea.frameNo;
+    myScore.update();
+    myGamePiece.newPos();
+    myGamePiece.update();
+    myGameArea.frameNo += 1;
+
+    // Mengatur tinggi dan jarak awal rintangan
+    if (myGameArea.frameNo == 1 || everyInterval(150)) {
+        x = myGameArea.canvas.width;
+        minHeight = 50; // Ubah tinggi minimum rintangan
+        maxHeight = 250; // Ubah tinggi maksimum rintangan
+        height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+        gap = 100; // Jarak antara rintangan atas dan bawah
+        myObstacles.push(new component(30, height, "green", x - 100, 0)); // Ubah posisi x menjadi lebih dekat
+        myObstacles.push(new component(30, x - height + gap, "green", x - 100, height + gap)); // Ubah posisi x menjadi lebih dekat
+    }
+    for (i = 0; i < myObstacles.length; i++) {
+        myObstacles[i].x += -1;
+        myObstacles[i].update();
+    }
+}
+
+
+        function everyInterval(n) {
+            return (myGameArea.frameNo / n) % 1 === 0;
+        }
+
+        function keyDown(e) {
+            switch (e.keyCode) {
+                case 37: // Left arrow
+                    myGamePiece.speedX = -1;
+                    break;
+                case 39: // Right arrow
+                    myGamePiece.speedX = 1;
+                    break;
+                case 38: // Up arrow
+                    myGamePiece.speedY = -1;  // Kecepatan vertikal
+                    break;
+                case 40: // Down arrow
+                    myGamePiece.speedY = 1;  // Kecepatan vertikal
+                    break;
+            }
+        }
+
+        function keyUp(e) {
+            switch (e.keyCode) {
+                case 37:
+                case 39:
+                    myGamePiece.speedX = 0;
+                    break;
+                case 38:
+                case 40:
+                    myGamePiece.speedY = 0;  // Set kecepatan vertikal ke 0 saat tombol dilepas
+                    break;
+            }
+        }
+
+        // Tambahkan event listener pada tombol MULAI
+        document.getElementById('start-button').addEventListener('click', startGame);
+    </script>
+</body>
+</html>
